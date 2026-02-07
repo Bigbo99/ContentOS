@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重置数据源配置</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        button {
+            background: #4F46E5;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #4338CA;
+        }
+        .success {
+            background: #10B981;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            margin: 20px 0;
+            display: none;
+        }
+        pre {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 重置数据源配置为 RSS</h1>
+        <p>当前配置使用了旧的 API 接口。点击下面的按钮将所有数据源重置为 RSS 订阅方式。</p>
+
+        <button onclick="resetSources()">重置为 RSS 数据源</button>
+        <button onclick="showCurrent()">查看当前配置</button>
+        <button onclick="clearAll()">清除所有缓存</button>
+
+        <div id="success" class="success">
+            ✅ 配置已重置！请关闭此页面并刷新主应用。
+        </div>
+
+        <h3>当前配置：</h3>
+        <pre id="output">点击"查看当前配置"按钮...</pre>
+    </div>
+
+    <script>
+        const NEW_RSS_SOURCES = [
+          { id: 's1', name: '微博热搜', url: 'https://rsshub.app/weibo/search/hot', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's2', name: '知乎热榜', url: 'https://rsshub.app/zhihu/hotlist', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's3', name: '抖音热点', url: 'https://rsshub.app/douyin/hot', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's4', name: '百度热搜', url: 'https://rsshub.app/baidu/topwords', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's5', name: '36氪快讯', url: 'https://rsshub.app/36kr/newsflashes', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's6', name: '少数派最新', url: 'https://rsshub.app/sspai/index', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's7', name: 'B站热搜', url: 'https://rsshub.app/bilibili/hot-search', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's8', name: 'Hacker News', url: 'https://hnrss.org/frontpage', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's9', name: 'TechCrunch', url: 'https://techcrunch.com/feed/', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's10', name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's11', name: 'GitHub Trending', url: 'https://rsshub.app/github/trending/daily', type: 'rss', active: true, lastSync: '实时' },
+          { id: 's12', name: 'Reddit r/technology', url: 'https://www.reddit.com/r/technology/.rss', type: 'rss', active: true, lastSync: '实时' }
+        ];
+
+        function resetSources() {
+            const storageKey = 'contentos-settings-storage';
+            const currentData = localStorage.getItem(storageKey);
+
+            if (currentData) {
+                const parsed = JSON.parse(currentData);
+                parsed.state.sources = NEW_RSS_SOURCES;
+                localStorage.setItem(storageKey, JSON.stringify(parsed));
+
+                document.getElementById('success').style.display = 'block';
+                document.getElementById('output').textContent = JSON.stringify(NEW_RSS_SOURCES, null, 2);
+
+                console.log('✅ 数据源已重置为 RSS');
+            } else {
+                alert('未找到配置数据');
+            }
+        }
+
+        function showCurrent() {
+            const storageKey = 'contentos-settings-storage';
+            const currentData = localStorage.getItem(storageKey);
+
+            if (currentData) {
+                const parsed = JSON.parse(currentData);
+                document.getElementById('output').textContent = JSON.stringify(parsed.state.sources, null, 2);
+            } else {
+                document.getElementById('output').textContent = '未找到配置数据';
+            }
+        }
+
+        function clearAll() {
+            if (confirm('确定要清除所有缓存吗？这将重置所有设置！')) {
+                localStorage.clear();
+                document.getElementById('success').style.display = 'block';
+                document.getElementById('output').textContent = '所有缓存已清除！刷新页面后将加载默认配置。';
+            }
+        }
+    </script>
+</body>
+</html>

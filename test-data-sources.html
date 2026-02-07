@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>真实数据源测试工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .test-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .test-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        .test-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .test-card .url {
+            font-size: 12px;
+            color: #888;
+            word-break: break-all;
+            margin-bottom: 15px;
+            font-family: monospace;
+        }
+        .test-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+        }
+        .test-btn:active {
+            transform: translateY(0);
+        }
+        .test-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .results {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .trend-item {
+            padding: 8px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .trend-item:last-child {
+            border-bottom: none;
+        }
+        .test-all-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        .test-all-btn:hover {
+            transform: translateY(-2px);
+        }
+        .summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .summary h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 ContentOS 真实数据源测试工具</h1>
+
+        <button class="test-all-btn" onclick="testAll()">🚀 测试所有数据源</button>
+
+        <div class="test-grid" id="testGrid"></div>
+
+        <div class="summary" id="summary" style="display: none;">
+            <h2>测试摘要</h2>
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <div class="stat-number" id="totalTests">0</div>
+                    <div class="stat-label">总测试数</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="successCount" style="color: #28a745;">0</div>
+                    <div class="stat-label">成功</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="failCount" style="color: #dc3545;">0</div>
+                    <div class="stat-label">失败</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="totalTrends">0</div>
+                    <div class="stat-label">获取热点数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dataSources = [
+            { name: '微博热搜', url: 'https://api.vvhan.com/api/hotlist/weibo', type: 'vvhan' },
+            { name: '知乎热榜', url: 'https://api.vvhan.com/api/hotlist/zhihu', type: 'vvhan' },
+            { name: '抖音热榜', url: 'https://api.vvhan.com/api/hotlist/douyin', type: 'vvhan' },
+            { name: '百度热搜', url: 'https://api.vvhan.com/api/hotlist/baidu', type: 'vvhan' },
+            { name: '小红书热搜', url: 'https://api.vvhan.com/api/hotlist/xiaohongshu', type: 'vvhan' },
+            { name: 'Reddit Technology', url: 'https://www.reddit.com/r/technology/hot.json', type: 'reddit' },
+            { name: 'GitHub Trending', url: 'https://api.gitterapp.com/repositories', type: 'github' },
+        ];
+
+        let testResults = { success: 0, fail: 0, totalTrends: 0 };
+
+        function renderTestCards() {
+            const grid = document.getElementById('testGrid');
+            grid.innerHTML = dataSources.map((source, index) => `
+                <div class="test-card">
+                    <h3>${source.name}</h3>
+                    <div class="url">${source.url}</div>
+                    <button class="test-btn" onclick="testSource(${index})">
+                        🧪 测试此数据源
+                    </button>
+                    <div id="status-${index}"></div>
+                    <div id="results-${index}" class="results" style="display: none;"></div>
+                </div>
+            `).join('');
+        }
+
+        async function testSource(index) {
+            const source = dataSources[index];
+            const statusDiv = document.getElementById(`status-${index}`);
+            const resultsDiv = document.getElementById(`results-${index}`);
+            const btn = event.target;
+
+            btn.disabled = true;
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = '⏳ 正在测试...';
+            resultsDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(source.url, {
+                    signal: AbortSignal.timeout(10000),
+                    headers: source.type === 'reddit' ? { 'User-Agent': 'ContentOS/1.0' } : {}
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                let trends = [];
+                let count = 0;
+
+                if (source.type === 'vvhan') {
+                    if (data.success && Array.isArray(data.data)) {
+                        trends = data.data.slice(0, 5);
+                        count = data.data.length;
+                    }
+                } else if (source.type === 'reddit') {
+                    if (data.data && Array.isArray(data.data.children)) {
+                        trends = data.data.children.slice(0, 5);
+                        count = data.data.children.length;
+                    }
+                } else if (source.type === 'github') {
+                    if (Array.isArray(data)) {
+                        trends = data.slice(0, 5);
+                        count = data.length;
+                    }
+                }
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ 成功！获取到 ${count} 条真实数据`;
+
+                if (trends.length > 0) {
+                    resultsDiv.style.display = 'block';
+                    resultsDiv.innerHTML = '<strong>前5条热点预览：</strong><br>' +
+                        trends.map((item, i) => {
+                            let title = '';
+                            if (source.type === 'vvhan') {
+                                title = `${i+1}. ${item.title || item.name || '未知'}`;
+                            } else if (source.type === 'reddit') {
+                                title = `${i+1}. ${item.data.title}`;
+                            } else if (source.type === 'github') {
+                                title = `${i+1}. ${item.author}/${item.name}`;
+                            }
+                            return `<div class="trend-item">${title}</div>`;
+                        }).join('');
+                }
+
+                testResults.success++;
+                testResults.totalTrends += count;
+
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ 失败: ${error.message}`;
+                testResults.fail++;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function testAll() {
+            testResults = { success: 0, fail: 0, totalTrends: 0 };
+            document.getElementById('summary').style.display = 'block';
+
+            for (let i = 0; i < dataSources.length; i++) {
+                await testSource(i);
+                await new Promise(resolve => setTimeout(resolve, 500)); // 避免请求过快
+
+                // 更新摘要
+                document.getElementById('totalTests').textContent = i + 1;
+                document.getElementById('successCount').textContent = testResults.success;
+                document.getElementById('failCount').textContent = testResults.fail;
+                document.getElementById('totalTrends').textContent = testResults.totalTrends;
+            }
+        }
+
+        // 初始化页面
+        renderTestCards();
+    </script>
+</body>
+</html>
