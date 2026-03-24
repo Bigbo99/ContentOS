@@ -14,6 +14,8 @@
 
 ## 快速开始
 
+https://github.com/user-attachments/assets/13ad2843-92aa-4cda-aad8-727307c03838
+
 ### 前置要求
 
 - Node.js 18+
